@@ -1,0 +1,543 @@
+#:import d dialogs
+#:import f files
+
+MDScreen: 
+
+	MDNavigationLayout:
+
+		ScreenManager:
+
+		    MDScreen:
+
+				MDBoxLayout:
+					orientation: 'vertical'
+
+					MDToolbar:
+						title: "Sorteador"
+				        left_action_items: [['menu', lambda x: nav_drawer.set_state("toggle")]]
+				        md_bg_color: app.theme_cls.primary_color
+						size_hint: (1, 0.12)
+						pos_hint: {"center_x": 0.5, "center_y": 0.5}
+
+
+					MDTabs:
+						id: tab_master
+						tab_bar_height: "25dp"
+						text_color_active: app.theme_cls.accent_color
+						text_color_normal: [0, 0, 0, 1]
+							
+	    MDNavigationDrawer:
+	    	id: nav_drawer
+		    orientation: "vertical"
+		    padding: "0dp"
+
+		    MDCardElev:
+		    	orientation: "vertical"
+		    	elevation: 10
+		    	padding: "15dp"
+		    	size_hint: (1, 0.5)
+		    	radius: [dp(2), dp(2), dp(2), dp(2)]
+		    	md_bg_color: app.theme_cls.primary_color
+
+		        MDIconButton:
+		            id: avatar
+		            user_font_size: "100dp"
+		            icon: app.data["configs"]["profile"]
+		            theme_text_color: "Custom"
+		            text_color: app.theme_cls.opposite_text_color
+
+			    MDLabel:
+			        text: "Meu Perfil"
+			        font_style: "Button"
+			        size_hint_y: None
+			        font_size: "20dp"
+			        height: self.texture_size[1]
+		            theme_text_color: "Custom"
+		            text_color: app.theme_cls.opposite_text_color
+
+			    MDLabel:
+			    	id: avatar_text
+			        text: ""
+			        font_style: "Caption"
+			        size_hint_y: None
+			        font_size: "14dp"
+			        height: self.texture_size[1]
+		            theme_text_color: "Custom"
+		            text_color: app.theme_cls.opposite_text_color
+
+		    ScrollView:
+		    	id: list_holder
+		    	MeuPerfilList:
+
+
+<MeuPerfilList>:
+	MDList:
+	    padding: 10
+
+	    OneLineIconListItem:
+	    	text: "Adicionar Sorteador"
+	    	on_release: app.open_dialog(d.add_tab_dialog)
+	    	
+	    	IconLeftWidget:
+	    		icon: "plus"
+
+	    OneLineIconListItem:
+	    	text: "Remover Sorteador"
+	    	on_release: app.open_dialog(d.remove_tab_dialog)
+	    	
+	    	IconLeftWidget:
+	    		icon: "close"
+
+	    OneLineIconListItem:
+	    	text: "Meus Sorteios"
+	    	on_release: app.show_last_sorteios()
+
+	    	IconLeftWidget:
+	    		icon: "format-list-bulleted"
+
+	    OneLineIconListItem:
+	    	text: "Easter Eggs"
+
+	    	IconLeftWidget:
+	    		icon: 'penguin'
+	    		on_release: app.easter_egg()
+
+	    OneLineIconListItem:
+	    	text: "Configurações"
+	    	on_release: app.show_configurations()
+	    	
+	    	IconLeftWidget:
+	    		icon: "cog"
+
+	    OneLineIconListItem:
+	    	text: "Sair"
+	    	on_release: app.open_dialog(d.confirmation_dialog, "Você tem certeza que deseja sair?\n\nO arquivo será salvo", app.exit)
+
+	    	IconLeftWidget:
+	    		icon: 'exit-to-app'
+
+<ConfigurationItems>:
+	OneLineListItem:
+		text: "Cores e Tema:"
+
+	OneLineIconListItem:
+		text: "Inverter Cor Principal"
+		#on_release: app.open_color_picker("primary")
+		on_release: app.swap_colors()
+
+		IconLeftWidget:
+			icon: 'palette'
+
+	#OneLineIconListItem:
+	#	text: "Cor de Destaque"
+	#	on_release: app.open_dialog(d.color_picker_dialog, app.theme_cls.accent_color)
+
+	#	IconLeftWidget:
+	#		icon: 'palette-outline'
+
+	OneLineIconListItem:
+		text: "Mudar Tema"
+		on_release: app.change_theme()
+
+		IconLeftWidget:
+			icon: 'brightness-4'
+
+	OneLineListItem:
+		text: "Arquivo:"
+
+	OneLineIconListItem:
+		text: "Limpar Arquivo"
+		on_release: app.open_dialog(d.confirmation_dialog, "Você realmente deseja limpar o arquivo?", app.reset_file, app.path, app.FILE)
+
+		IconLeftWidget:
+			icon: 'file-outline'
+
+	OneLineIconListItem:
+		text: "Salvar Arquivo"
+		on_release: app.save_file(app.data, app.path, app.FILE)
+
+		IconLeftWidget:
+			icon: "file-download"
+
+	OneLineIconListItem:
+		text: "Salvar Como"
+		on_release: app.open_dialog(d.confirmation_dialog, 'Ao "Salvar Como", você irá criar um arquivo com os dados da sessão atual', app.close_and_open_dialog, d.save_as_dialog)
+
+		IconLeftWidget:
+			icon: 'file-multiple'
+
+	OneLineIconListItem:
+		text: "Selecionar Arquivo"
+		on_release: app.open_file_manager(app.rename_file)
+
+		IconLeftWidget:
+			icon: 'file-find'
+
+	OneLineIconListItem:
+		text: "Excluir"
+		on_release: app.open_file_manager(app.delete_file)
+
+		IconLeftWidget:
+			icon: 'file-remove'
+
+	OneLineListItem:
+		text: "Outros:"
+
+	OneLineIconListItem:
+		text: "Alterar Formato de Data"
+		on_release: app.open_dialog(d.time_format_dialog)
+
+		IconLeftWidgetWithoutTouch:
+			icon: "calendar-clock"
+
+	OneLineListItem:
+		text: "Saída:"
+
+	OneLineIconListItem:
+		text: "Sair sem Salvar"
+		on_release: app.open_dialog(d.confirmation_dialog, "Você tem certeza que deseja sair sem salvar?\n\nAs alterações feitas após o último save serão perdidas", app.stop)
+
+		IconLeftWidget:
+			icon: 'exit-to-app'
+
+<SaveAsContent>:
+	height: "50dp"
+	orientation: "vertical"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDTextField
+		id: new_file_name
+		text: ""
+		hint_text: "Nome do Novo Arquivo:"
+		helper_text_mode: "on_focus"
+		helper_text: "NÃO USE EXTENSÃO ( . )"
+		pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+<TimeFormatContent>:
+	height: "300dp"
+	orientation: "vertical"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDTextField
+		id: new_file_name
+		text: app.data["configs"]["time_format"]
+		hint_text: "Formato Desejado:"
+		pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+	MDLabel:
+		text: "Legenda:"
+		halign: "center"
+
+	MDLabel:
+		text: '"%H" - hora'
+
+	MDLabel:
+		text: '"%M" - minutos'
+
+	MDLabel:
+		text: '"%S" - segundos'
+
+	MDLabel:
+		text: '"%d" - dia'
+
+	MDLabel:
+		text: '"%m" - mês'
+
+	MDLabel:
+		text: '"%Y" - ano'
+
+<AddTabContent>:
+	height: "150dp"
+	orientation: "vertical"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDTextField
+		id: new_tab_name
+		text: ""
+		hint_text: "Nome da Aba:"
+		helper_text_mode: "on_focus"
+		helper_text: "Tente usar menos de 12 caracteres"
+		pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+	MDBoxLayout:
+		orientation: "horizontal"
+
+		MDLabel:
+			text: "Tipo:"
+			pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+			size_hint: (0.8, None)
+
+		MDRectangleFlatButton:
+			id: tipo_sorteador
+			text: "Numero"
+			pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+			size_hint: (1, None)
+			on_release:app.menu_bind(tipo_sorteador)
+
+<RemoveTabContent>:
+	height: "300dp"
+	orientation: "vertical"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDLabel:
+		id: selecionado
+		text: "Selecione para Remover"
+		halign: "center"
+		size_hint_y: 0.25
+
+	ScrollView:
+		size_hint_y: 1
+		MDList:
+			id: list_manager
+
+<TabNumero>:
+	id: tab_numero
+	MDCardElev:
+		orientation: "vertical"
+		size_hint: (0.8, 0.25)
+		pos_hint: {'center_x': 0.5, 'center_y': 0.8}
+		elevation: 7
+		radius: [dp(20), dp(20), dp(20), dp(20)]
+
+		MDLabel:
+			text: "Sorteado:"
+			theme_text_color: "Secondary"
+			size_hint: (1, 0.4)
+			pos_hint: {'top': 1, 'center_x': 0.55}
+
+		MDSeparator:
+			height: "1dp"
+			pos_hint: {'top': 1}
+			size_hint_y: None
+
+		MDLabel:
+			id: sorteado
+			pos_hint: {'center_y': 0.5}
+			halign: 'center'
+			text: root.sorteado
+			font_size: "25dp"
+
+	MDCardElev:
+		orientation: "vertical"
+		size_hint: (0.8, 0.25)
+		pos_hint: {'center_x': 0.5, 'center_y': 0.45}
+		elevation: 7
+		radius: [dp(20), dp(20), dp(20), dp(20)]
+
+		MDFloatLayout:
+
+			MDLabel:
+				id: numbers_text
+				text: f"De {root.minimum} a {root.maximum}"
+				font_size: "18dp"
+				halign: "center"
+				pos_hint: {"center_x": 0.5, "center_y": 0.7}
+
+			MDRectangleFlatIconButton:
+				text: "ALTERAR"
+				icon: "pencil"
+				pos_hint: {"center_x": 0.5, "center_y": 0.4}
+				size_hint: (0.5, None)
+				on_release: app.open_dialog(d.edit_numbers_dialog, tab_numero)
+
+	MDFillRoundFlatButton:
+		text: "SORTEAR!"
+		font_size: "18dp"
+		md_bg_color: app.theme_cls.accent_color
+		size_hint: (0.5, 0.1)
+		pos_hint: {"center_x": 0.5, "center_y": 0.15}
+		on_release: app.sortear_numero(tab_numero)
+
+
+<TabLista>:
+	id: tab_lista
+	MDCardElev:
+		orientation: "vertical"
+		size_hint: (0.8, 0.25)
+		pos_hint: {'center_x': 0.5, 'center_y': 0.8}
+		elevation: 7
+		radius: [dp(20), dp(20), dp(20), dp(20)]
+
+		MDLabel:
+			text: "Sorteado:"
+			theme_text_color: "Secondary"
+			size_hint: (1, 0.4)
+			pos_hint: {'top': 1, 'center_x': 0.55}
+
+		MDSeparator:
+			height: "1dp"
+			pos_hint: {'top': 1}
+			size_hint_y: None
+
+		MDLabel:
+			id: sorteado
+			pos_hint: {'center_y': 0.5}
+			halign: 'center'
+			text: root.sorteado
+			font_size: "25dp"
+
+	MDCardElev:
+		orientation: "vertical"
+		elevation: 7
+		radius: [dp(20), dp(20), dp(20), dp(20)]
+		size_hint: (0.8, 0.25)
+		pos_hint: {'center_x': 0.5, 'center_y': 0.45}
+
+		MDFloatLayout:
+
+			MDRectangleFlatIconButton:
+				text: "EDITAR LISTA"
+				icon: "pencil"
+				pos_hint: {"center_x": 0.5, "center_y": 0.5}
+				size_hint: (0.5, None)
+				on_release: app.open_dialog(d.edit_lista_dialog, tab_lista)
+
+	MDFillRoundFlatButton:
+		text: "SORTEAR!"
+		font_size: "18dp"
+		md_bg_color: app.theme_cls.accent_color
+		size_hint: (0.5, 0.1)
+		pos_hint: {"center_x": 0.5, "center_y": 0.15}
+		on_release: app.sortear_lista(tab_lista)
+
+
+<TabDado>:
+	id: tab_dado
+	MDCardElev:
+		orientation: "vertical"
+		size_hint: (0.8, 0.25)
+		pos_hint: {'center_x': 0.5, 'center_y': 0.8}
+		elevation: 7
+		radius: [dp(20), dp(20), dp(20), dp(20)]
+
+		MDLabel:
+			text: "Sorteado:"
+			theme_text_color: "Secondary"
+			pos_hint: {'top': 1, 'center_x': 0.55}
+
+		MDSeparator:
+			height: "1dp"
+			pos_hint: {'top': 1}
+			size_hint_y: None
+
+		MDIconButton:
+			id: sorteado
+			user_font_size: "64dp"
+			icon: root.sorteado
+			pos_hint: {'center_y': 0.5, "center_x": 0.5}
+
+	MDFillRoundFlatButton:
+		text: "SORTEAR!"
+		font_size: "18dp"
+		md_bg_color: app.theme_cls.accent_color
+		size_hint: (0.5, 0.1)
+		pos_hint: {"center_x": 0.5, "center_y": 0.15}
+		on_release: app.sortear_dado(tab_dado)
+
+<EditNumbersContent>:
+	height: "120dp"
+	size_hint: (0.9, None)
+	orientation: "horizontal"
+	padding: "10dp"
+	spacing: "10dp"
+
+	MDTextField:
+		id: minimum
+		hint_text: "Mínimo"
+		font_size: "18dp"
+		pos_hint: {"center_y": 0.5}
+		size_hint: (0.3, None)
+		line_color_focus: app.theme_cls.text_color
+		hint_text_color_focus: app.theme_cls.bg_light
+		text_color_focus: app.theme_cls.text_color
+		text: root.minimum
+
+	MDLabel:
+		text: "a"
+		font_size: "20dp"
+		pos_hint: {"center_y": 0.5}
+		size_hint: (0.3, None)
+		halign: "center"
+		font_size: "18dp"
+
+	MDTextField:
+		id: maximum
+		hint_text: "Máximo"
+		font_size: "18dp"
+		pos_hint: {"center_y": 0.5}
+		size_hint: (0.3, None)
+		line_color_focus: app.theme_cls.text_color
+		hint_text_color_focus: app.theme_cls.bg_light
+		text_color_focus: app.theme_cls.text_color
+		text: root.maximum
+
+<EditListaContent>:
+	height: "250dp"
+	size_hint: (0.9, None)
+	orientation: "vertical"
+	padding: "10dp"
+	spacing: "10dp"
+
+	InputMenuItem:
+		size_hint: (1, 0.4)
+
+	ScrollView:
+		MDList:
+			id: itens_lista
+
+
+<MenuItem>:
+	id: item
+	theme_text_color: "Custom"
+	text_color: app.theme_cls.text_color
+
+	IconLeftWidget:
+		icon: root.icon
+		theme_text_color: "Custom"
+		text_color: app.theme_cls.primary_color
+		on_release: d.remove_item_lista(item)
+
+<InputMenuItem>:
+	orientation: "vertical"
+	radius: [dp(2), dp(2), dp(2), dp(2)]
+	md_bg_color: app.theme_cls.bg_dark
+
+	MDBoxLayout:
+		orientation: "horizontal"
+		size_hint: (1, 0.1)
+
+		MDTextField:
+			id: new_item
+			text: ""
+			hint_text: "Novo Item"
+			pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+		MDIconButton:
+			icon: "check"
+			pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+			theme_text_color: "Custom"
+			text_color: app.theme_cls.primary_color
+			on_release: d.add_item_lista(new_item)
+
+	MDSeparator:
+		height: "1dp"
+		pos_hint: {'bottom': 1}
+		size_hint_y: None
+
+<CancelButton>:
+	text: "CANCELAR"
+    font_size: "12dp"
+    theme_text_color: "Custom"
+    text_color: app.theme_cls.primary_color
+
+<OkayButton>:
+	text: "OK"
+    font_size: "12dp"
+    md_bg_color: app.theme_cls.primary_color
+
+
+
