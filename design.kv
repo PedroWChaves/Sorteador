@@ -14,7 +14,7 @@ MDScreen:
 
 					MDToolbar:
 						title: "Sorteador"
-				        left_action_items: [['menu', lambda x: nav_drawer.set_state("toggle")]]
+				        left_action_items: [['menu', app.toggle_nav_drawer]]
 				        md_bg_color: app.theme_cls.primary_color
 						size_hint: (1, 0.12)
 						pos_hint: {"center_x": 0.5, "center_y": 0.5}
@@ -181,7 +181,7 @@ MDScreen:
 			icon: 'file-remove'
 
 	OneLineListItem:
-		text: "Outros:"
+		text: "Preferências:"
 
 	OneLineIconListItem:
 		text: "Alterar Formato de Data"
@@ -189,6 +189,20 @@ MDScreen:
 
 		IconLeftWidgetWithoutTouch:
 			icon: "calendar-clock"
+
+	OneLineIconListItem:
+		text: "Número de Sorteios Salvos"
+		on_release: app.open_dialog(d.meus_sorteios_edit_dialog)
+
+		IconLeftWidgetWithoutTouch:
+			icon: "format-list-bulleted"
+
+	OneLineIconListItem:
+		text: "Salvar automaticamente"
+		on_release: app.open_dialog(d.autosave_dialog)
+
+		IconLeftWidgetWithoutTouch:
+			icon: "content-save"
 
 	OneLineListItem:
 		text: "Saída:"
@@ -206,7 +220,7 @@ MDScreen:
 	size_hint: (0.9, None)
 	padding: "10dp"
 
-	MDTextField
+	MyTextField
 		id: new_file_name
 		text: ""
 		hint_text: "Nome do Novo Arquivo:"
@@ -220,7 +234,7 @@ MDScreen:
 	size_hint: (0.9, None)
 	padding: "10dp"
 
-	MDTextField
+	MyTextField
 		id: new_file_name
 		text: app.data["configs"]["time_format"]
 		hint_text: "Formato Desejado:"
@@ -231,22 +245,57 @@ MDScreen:
 		halign: "center"
 
 	MDLabel:
-		text: '"%H" - hora'
+		text: '%H - hora'
 
 	MDLabel:
-		text: '"%M" - minutos'
+		text: '%M - minutos'
 
 	MDLabel:
-		text: '"%S" - segundos'
+		text: '%S - segundos'
 
 	MDLabel:
-		text: '"%d" - dia'
+		text: '%d - dia'
 
 	MDLabel:
-		text: '"%m" - mês'
+		text: '%m - mês'
 
 	MDLabel:
-		text: '"%Y" - ano'
+		text: '%Y - ano'
+
+
+<MeusSorteiosEditContent>:
+	height: "100dp"
+	orientation: "vertical"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDLabel:
+		text: "Quantos sorteios você deseja salvar na memória?"
+
+	MyTextField
+		id: num_sorteios
+		text: app.data["configs"]["num_meus_sorteios"]
+		pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+
+
+<AutosaveContent>:
+	height: "80dp"
+	orientation: "horizontal"
+	size_hint: (0.9, None)
+	padding: "10dp"
+
+	MDLabel:
+		text: "Salvar Automaticamente:"
+		halign: "center"
+		size_hint: 1, 1
+
+	MDCheckbox:
+		id: checkbox
+		active: app.data["configs"]["autosave"]
+		selected_color: app.theme_cls.primary_color
+		size_hint: 0.2, 1
+
+
 
 <AddTabContent>:
 	height: "150dp"
@@ -254,7 +303,7 @@ MDScreen:
 	size_hint: (0.9, None)
 	padding: "10dp"
 
-	MDTextField
+	MyTextField
 		id: new_tab_name
 		text: ""
 		hint_text: "Nome da Aba:"
@@ -445,7 +494,7 @@ MDScreen:
 	padding: "10dp"
 	spacing: "10dp"
 
-	MDTextField:
+	MyTextField:
 		id: minimum
 		hint_text: "Mínimo"
 		font_size: "18dp"
@@ -464,7 +513,7 @@ MDScreen:
 		halign: "center"
 		font_size: "18dp"
 
-	MDTextField:
+	MyTextField:
 		id: maximum
 		hint_text: "Máximo"
 		font_size: "18dp"
@@ -510,7 +559,7 @@ MDScreen:
 		orientation: "horizontal"
 		size_hint: (1, 0.1)
 
-		MDTextField:
+		MyTextField:
 			id: new_item
 			text: ""
 			hint_text: "Novo Item"

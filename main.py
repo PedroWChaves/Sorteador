@@ -6,6 +6,7 @@ from kivymd.uix.list import MDList, TwoLineListItem
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.snackbar import Snackbar
 from kivymd.uix.behaviors import FakeRectangularElevationBehavior
+from kivymd.uix.textfield import MDTextField
 from kivymd.uix.filemanager import MDFileManager
 from kivymd.color_definitions import colors
 #from kivymd.uix.pickers import MDColorPicker
@@ -24,6 +25,14 @@ from dialogs import *
 from files import *
 
 # CLASSES BASE
+class MyTextField(MDTextField):
+    def on_text(self, instance, text):
+        if text == "":
+            Clock.schedule_once(lambda x: self.text_focus(instance), 0)
+
+    def text_focus(self, instance):
+        instance.focus = True
+
 class MDCardElev(MDCard, FakeRectangularElevationBehavior):
     pass
 
@@ -54,24 +63,40 @@ class Sorteador(MDApp):
     # VARIAVEIS GLOBAIS
     dialog = None
     num_tabs = 0
+    nav_content = "perfil"
+
+    # DECORATOR
+    def autosave(func):
+        def wrapper(self, *args, **kwargs):
+            func(self, *args, **kwargs)
+
+            if self.data["configs"]["autosave"]:
+                save_json(self.data, self.path, self.FILE)
+
+        return wrapper
 
 
     # INICIALIZAÇÃO, FINALIZAÇÃO E REINICIALIZAÇÃO
     def build(self):
         self.path = self.user_data_dir + "/"
         self.data, self.load_error = load_json(self.path, self.FILE)
+        if not self.load_error: check_json_file(self)
 
         self.theme_cls.primary_palette = self.data['configs']['color']
         self.theme_cls.primary_hue = self.data['configs']['color_hue']
         self.theme_cls.accent_palette = self.data['configs']['accent']
         self.theme_cls.accent_hue = self.data['configs']['accent_hue']
         self.theme_cls.theme_style = self.data['configs']['theme']
+        self.ultimos = self.data["ultimos"].copy()
 
         Window.bind(on_request_close=self.on_request_close)
+        Window.softinput_mode = "below_target" # TESTAR
+        Window.keyboard_padding = 5 # TESTAR
         if platform == "win":
             Window.size = (337.5, 600)
 
         return Builder.load_file('design.kv')
+
 
     def on_start(self):
         self.menu = self.start_menu(items={
@@ -89,16 +114,20 @@ class Sorteador(MDApp):
 
         del self.load_error
 
+
     def on_request_close(self, *args, **kwargs):
         save_json(self.data, self.path, self.FILE)
         return False
+
 
     def exit(self, *args):
         save_json(self.data, self.path, self.FILE)
         self.stop()
 
+
     def restart_app(self):
         self.data, _ = load_json(self.path, self.FILE)
+        self.ultimos = self.data["ultimos"].copy()
 
         self.theme_cls.primary_palette = self.data['configs']['color']
         self.theme_cls.primary_hue = self.data['configs']['color_hue']
@@ -110,7 +139,7 @@ class Sorteador(MDApp):
             self.root.ids.tab_master.remove_widget(tab)
 
         self.load_tabs()
-        self.root.ids.nav_drawer.set_state("toggle")
+        self.toggle_nav_drawer()
 
 
     # APP
@@ -124,9 +153,11 @@ class Sorteador(MDApp):
         )
         snackbar.open()
 
+
     def reset_file(self, *args):
         reset_json(*args)
         self.close_dialog()
+
 
     def load_tabs(self):
         self.num_tabs = 0
@@ -166,6 +197,13 @@ class Sorteador(MDApp):
 
             self.num_tabs +=1
 
+
+    def toggle_nav_drawer(self, *args):
+        self.root.ids.nav_drawer.set_state("toggle")
+        if self.nav_content != "perfil":
+            self.show_meu_perfil()
+
+
     def show_meu_perfil(self, *args):
         self.root.ids.list_holder.clear_widgets()
         self.root.ids.list_holder.add_widget(MeuPerfilList())
@@ -173,11 +211,14 @@ class Sorteador(MDApp):
         button = self.root.ids.nav_drawer.children[0]
         self.root.ids.nav_drawer.remove_widget(button)
 
+        self.nav_content = "perfil"
+
+
     def show_last_sorteios(self, *args):
         self.root.ids.list_holder.clear_widgets()
         self.root.ids.list_holder.add_widget(MDList(padding=10))
 
-        for sorteio in self.data["ultimos"]:
+        for sorteio in self.ultimos:
             self.root.ids.list_holder.children[0].add_widget(
                 TwoLineListItem(
                     text=sorteio[0],
@@ -195,6 +236,9 @@ class Sorteador(MDApp):
             )
         )
 
+        self.nav_content = "sorteios"
+
+
     def show_configurations(self, *args):
         self.root.ids.list_holder.clear_widgets()
         self.root.ids.list_holder.add_widget(MDList(padding=10))
@@ -210,6 +254,8 @@ class Sorteador(MDApp):
                 on_release=self.show_meu_perfil
             )
         )
+
+        self.nav_content = "configs"
 
     # personalização
     '''
@@ -229,6 +275,7 @@ class Sorteador(MDApp):
         self.data['configs']['accent'] = new_color[0]
         self.data['configs']['accent_hue'] = new_color[1] 
     '''
+    @autosave
     def swap_colors(self):
         color1 = self.data['configs']['color']
         hue1 = self.data['configs']['color_hue']
@@ -247,6 +294,7 @@ class Sorteador(MDApp):
         self.data['configs']['accent_hue'] = hue1 
 
 
+    @autosave
     def change_theme(self, *args):
         if self.theme_cls.theme_style == "Light":
             self.theme_cls.theme_style = "Dark"
@@ -255,6 +303,8 @@ class Sorteador(MDApp):
             self.theme_cls.theme_style = "Light"
             self.data['configs']['theme'] = "Light"
 
+
+    @autosave
     def change_profile(self, icon, text):
         self.root.ids.avatar.icon = icon
         self.data["configs"]["profile"] = icon
@@ -268,9 +318,11 @@ class Sorteador(MDApp):
             self.dialog = func(self.get_running_app(), *args)
             self.dialog.open()
 
+
     def close_dialog(self, *args): # fecha dialogs e reseta pra "None"
         self.dialog.dismiss()
         self.dialog = None
+
 
     def close_and_open_dialog(self, func, *args):
         if self.dialog:
@@ -278,6 +330,7 @@ class Sorteador(MDApp):
 
         self.dialog = func(self.get_running_app(), *args)
         self.dialog.open()
+
 
     # MENU
     def start_menu(self, items):
@@ -299,9 +352,11 @@ class Sorteador(MDApp):
 
         return menu
 
+
     def menu_bind(self, button):
         self.menu.caller = button
         self.menu.open()
+
 
     def menu_callback(self, item, obj):
         self.menu.dismiss()
@@ -314,12 +369,15 @@ class Sorteador(MDApp):
             exit_manager=self.exit_file_manager,
         )
 
+
     def open_file_manager(self, select_func):
         self.file_manager.show(self.path)
         self.file_manager.select_path=select_func
 
+
     def exit_file_manager(self, *args):
         self.file_manager.close()
+
 
     def rename_file(self, file):
         self.open_dialog(
@@ -327,6 +385,7 @@ class Sorteador(MDApp):
             "Ao selecionar um arquivo ele será usado para carregar os dados",
             self.rename_file_confirm,
             file)
+
 
     def rename_file_confirm(self, file):
         file_path_list = file.split("/")
@@ -352,6 +411,7 @@ class Sorteador(MDApp):
             f"Você realmente deseja excluir o arquivo?\n\n{file}",
             self.delete_file_confirm,
             file)
+
 
     def delete_file_confirm(self, file):
         delete_json(file, "")
@@ -385,6 +445,7 @@ class Sorteador(MDApp):
 
 
     # EASTER EGGS
+    @autosave
     def easter_egg(self):
         self.snackbar = Snackbar(
             text='Te amo muito!',
@@ -408,6 +469,7 @@ class Sorteador(MDApp):
 
 
     # CALLBACKS
+    @autosave
     def add_tab(self, obj):
         dialog = self.dialog.ids.spacer_top_box.children[0].ids
 
@@ -452,6 +514,8 @@ class Sorteador(MDApp):
         self.root.ids.nav_drawer.set_state("toggle")
         Clock.schedule_once(self.change_tab, 0.1)
 
+
+    @autosave
     def remove_tab(self, *args):
         dialog = self.dialog.ids.spacer_top_box.children[0].ids
         to_remove = dialog.selecionado.text
@@ -475,9 +539,11 @@ class Sorteador(MDApp):
         self.close_dialog()
         self.root.ids.nav_drawer.set_state("toggle")
 
+
     def change_tab(self, *args):
         tabs = self.root.ids.tab_master.get_tab_list()
         self.root.ids.tab_master.switch_tab(tabs[-1])
+
 
     def save_as_file(self, *args):
         dialog = self.dialog.ids.spacer_top_box.children[0].ids
@@ -487,33 +553,67 @@ class Sorteador(MDApp):
 
         self.close_dialog()
 
+
+    @autosave
     def set_time_format(self, *args):
         dialog = self.dialog.ids.spacer_top_box.children[0].ids
-
         if not dialog.new_file_name.text:
             return
 
-        time_format = dialog.new_file_name.text
-        self.data["configs"]["time_format"] = time_format
+        self.data["configs"]["time_format"] = dialog.new_file_name.text
 
         self.close_dialog()
 
-    def add_sorteio_json(self, tab, sorteio):
-        self.data["tabs"][tab.num_tab]["sorteado"] = sorteio
-        tab_title = self.data["tabs"][tab.num_tab]["title"]
 
-        current_time = t.strftime(self.data["configs"]["time_format"], t.localtime()) # ADICIONAR OPÇÃO DE CONFIGURAR
+    @autosave
+    def edit_meus_sorteios(self, *args):
+        dialog = self.dialog.ids.spacer_top_box.children[0].ids
+        if not dialog.num_sorteios.text:
+            return
+
+        self.data["ultimos"] = self.data["ultimos"][:int(dialog.num_sorteios.text)]
+        self.data["configs"]["num_meus_sorteios"] = dialog.num_sorteios.text
+
+        self.close_dialog() 
+
+
+    @autosave
+    def edit_autosave(self, *args):
+        dialog = self.dialog.ids.spacer_top_box.children[0].ids
+
+        self.data["configs"]["autosave"] = dialog.checkbox.active
+
+        self.close_dialog() 
+
+
+    @autosave
+    def add_sorteio_json(self, tab, sorteio):
+        tab_json = self.data["tabs"][tab.num_tab]
+        tab_json["sorteado"] = sorteio
+        tab_title = tab_json["title"]
+
+        # texto de cima no item meus sorteios
+        if tab_json["tipo"] == "Numero":
+            sorteio += f": {tab_json['minimum']} - {tab_json['maximum']}"
+
+        # texto debaixo no item meus sorteios
+        current_time = t.strftime(self.data["configs"]["time_format"], t.localtime())
         if len(tab_title) > 14:
             secondary_text = f"{tab_title[:14]}... {current_time}"
         else:
             secondary_text = f"{tab_title}: {current_time}"
 
+        self.ultimos.insert(0, [sorteio, secondary_text])
 
+        # adiciona sorteio no json
         self.data["ultimos"].insert(0, (sorteio, secondary_text))
 
-        if len(self.data["ultimos"]) > 10:
+        # remove ultimo sorteio no json caso tenha excedido
+        if len(self.data["ultimos"]) > int(self.data["configs"]["num_meus_sorteios"]):
             self.data["ultimos"].pop()
 
+
+    @autosave
     def sortear_numero(self, tab):
         numbers = tab.ids.numbers_text.text.split(" ")
         minimum = int(numbers[1])
@@ -523,6 +623,8 @@ class Sorteador(MDApp):
         tab.ids.sorteado.text = sorteio
         self.add_sorteio_json(tab, sorteio)
 
+
+    @autosave
     def sortear_lista(self, tab):
         try:
             sorteio = r.choice(tab.lista)
@@ -532,12 +634,16 @@ class Sorteador(MDApp):
         tab.ids.sorteado.text = sorteio
         self.add_sorteio_json(tab, sorteio)
 
+
+    @autosave
     def sortear_dado(self, tab):
         sorteio = f"dice-{r.randrange(1, 7)}"
 
         tab.ids.sorteado.icon = sorteio
         self.add_sorteio_json(tab, sorteio)
 
+
+    @autosave
     def edit_numbers(self, obj):
         dialog = self.dialog.ids.spacer_top_box.children[0].ids
         minimum = dialog.minimum.text
@@ -549,6 +655,8 @@ class Sorteador(MDApp):
 
         self.close_dialog()
 
+
+    @autosave
     def edit_lista(self, obj):
         items = self.dialog.ids.spacer_top_box.children[0].ids.itens_lista.children
         list_items = [item.text for item in reversed(items)]
@@ -559,8 +667,9 @@ class Sorteador(MDApp):
         self.close_dialog()
 
 
-
-
+    def text_handle(self, *args):
+        for arg in args:
+            print(arg)
 
 
     '''
@@ -580,6 +689,8 @@ class Sorteador(MDApp):
         self.data['configs']['color_hue'] = hue
     '''
 
+
+    
 
 
 if __name__ == "__main__":

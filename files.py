@@ -10,7 +10,9 @@ def default_data():
             "accent": "LightBlue",
             "accent_hue": "400",
             "theme": "Dark",
-            "time_format": "%d/%m - %Hh%M"
+            "time_format": "%d/%m - %Hh%M",
+            "num_meus_sorteios": "10",
+            "autosave": True
         },
         "ultimos": [],
         "tabs": [
@@ -24,6 +26,10 @@ def default_data():
         ]
     }
 
+def check_json_file(app):
+    for key, value in default_data()["configs"].items():
+        if not key in app.data["configs"]:
+            app.data["configs"][key] = value
 
 def load_json(path, file):
     error = False

@@ -44,6 +44,12 @@ class SaveAsContent(BoxLayout):
 class TimeFormatContent(BoxLayout):
     pass
 
+class MeusSorteiosEditContent(BoxLayout):
+    pass
+
+class AutosaveContent(BoxLayout):
+    pass
+
 
 def delete_dialog(obj):
     App.get_running_app().dialog = None
@@ -198,9 +204,33 @@ def time_format_dialog(app, *args):
 
     return dialog
 
+def meus_sorteios_edit_dialog(app, *args):
+    dialog = MDDialog(
+        title = "Meus Sorteios:",
+        type = "custom",
+        content_cls = MeusSorteiosEditContent(),
+        buttons=[
+            CancelButton(on_release=app.close_dialog),
+            OkayButton(on_release=app.edit_meus_sorteios),
+        ],
+        on_dismiss = delete_dialog,
+    )
 
+    return dialog
 
+def autosave_dialog(app, *args):
+    dialog = MDDialog(
+        title = "Preferências",
+        type = "custom",
+        content_cls = AutosaveContent(),
+        buttons=[
+            CancelButton(on_release=app.close_dialog),
+            OkayButton(on_release=app.edit_autosave),
+        ],
+        on_dismiss = delete_dialog,
+    )
 
+    return dialog
 
 
 
